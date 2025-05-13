@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HESON SHOP</title>
+  <link rel="stylesheet" href="index.css">
+  <style>
+    .cart-action-btn {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 0.5rem 0;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      flex: 1 1 0;
+      transition: background 0.2s;
+    }
+
+    .cart-action-btn:hover {
+      background: #0056b3;
+    }
+
+    .payment-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+
+    .payment-content {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 300px;
+      width: 90%;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .payment-content h2 {
+      color: #007BFF;
+      margin-bottom: 1rem;
+    }
+    .payment-img {
+      width: 100%;
+      max-width: 200px;
+      margin: 1rem auto;
+      border-radius: 8px;
+      object-fit: cover;
+      height: 200px;
+      display: block;
+      align-items: center;
+      /* Center the image horizontally */
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .payment-number {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 1rem;
+    }
+
+    .done-btn {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .done-btn:hover {
+      background-color: #0056b3;
+    }
+
+    .payment-success {
+      font-weight: bold;
+      color: green;
+      margin-top: 1rem;
+    }
+.notification {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    color: #007BFF;
+    padding: 20px 24px;
+    border-radius: 8px;
+    box-shadow: 0 6px 16px 0 rgba(0,0,0,0.08), 0 3px 6px -4px rgba(0,0,0,0.12), 0 9px 28px 8px rgba(0,0,0,0.05);
+    font-size: 0.95rem;
+    font-family: 'Roboto', sans-serif;
+    display: none;
+    box-sizing: border-box;
+    text-align: center;
+    min-width: 160px;
+    max-width: 80vw;
+    z-index: 99999;
+}
+
+.notification.show {
+    display: block;
+    animation: notif-fadein 0.2s;
+}
+
+@keyframes notif-fadein {
+    from { opacity: 0; transform: translate(-50%, -60%);}
+    to   { opacity: 1; transform: translate(-50%, -50%);}
+}
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>HESON SHOP</h1>
+  </header>
+
+  <nav>
+    Welcome to HESON Diamond Store — Secure & Fast Recharge!
+  </nav>
+
+  <main>
+    <aside>
+      <div class="aside-title">🛒 Order Receipt</div>
+      <div id="cart-list"></div>
+      <p id="total-cost">Total: 0 Ks</p>
+      <hr style="margin:1rem 0;">
+      <ul class="game-list">
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+          <button id="reset-cart" class="cart-action-btn">Reset</button>
+          <button id="pay-now" class="cart-action-btn">Pay Now</button>
+        </div>
+
+        <div class="aside-title">🎮 Game Categories</div>
+        <li>MLBB Diamond</li>
+        <li>HOK</li>
+        <li>PUBG</li>
+        <li>Free Fire</li>
+        <li>Genshin Impact</li>
+      </ul>
+    </aside>
+
+    <div class="shop">
+      <div class="items" id="items-container"></div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 HESON Shop. All rights reserved.
+  </footer>
+
+  <div class="notification" id="notif"></div>
+
+  <!-- Payment Modal -->
+  <div id="payment-modal" class="payment-modal">
+    <div class="payment-content">
+      <h2>KBZ Pay</h2>
+      <div class="loading">⏳ Loading...</div>
+      <img src="kbz.jpg" alt="KBZ QR" class="payment-img" style="display:none;">
+      <p class="payment-number" style="display:none;">09 - 123456789</p>
+      <button id="done-btn" class="done-btn" style="display:none;">Done</button>
+      <p id="payment-success" class="payment-success" style="display:none;">✅ Payment Successful</p>
+    </div>
+  </div>
+
+  <script>
+    const items = [
+    { amount: 80, price: 3750 },
+    { amount: 160, price: 7500 },
+    { amount: 240, price: 13500 },
+    { amount: 400, price: 22500 },
+    { amount: 560, price: 30000 },
+    { amount: 800, price: 37500 },
+    { amount: 1200, price: 60000 },
+    { amount: 2400, price: 135000 },
+    { amount: 4000, price: 225000 },
+    { amount: 8000, price: 375000 },
+    { amount: "WEEKLY PASS", price: 4000 },
+    ];
+
+    let cart = {};
+    let total = 0;
+
+    function renderItems() {
+      const container = document.getElementById('items-container');
+      items.forEach(item => {
+        const el = document.createElement('article');
+        el.innerHTML = `
+          <img src="hok.jpg" alt="HOK Diamond" />
+          <p class="title">HOK Diamond </p>
+          <p class="details">💎${item.amount}<br>${item.price.toLocaleString()} Ks</p>
+          <button class="btn" onclick="addToCart(${item.amount}, ${item.price})">Add</button>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    function addToCart(amount, price) {
+      const key = `💎${amount}`;
+      cart[key] = (cart[key] || 0) + 1;
+      total += price;
+      updateCart();
+      showNotif(`Added ${key} (${price.toLocaleString()} Ks)`);
+    }
+
+    function updateCart() {
+      const list = document.getElementById('cart-list');
+      list.innerHTML = '';
+      for (let item in cart) {
+        list.innerHTML += `<p>${item} × ${cart[item]}</p>`;
+      }
+      document.getElementById('total-cost').textContent = `Total: ${total.toLocaleString()} Ks`;
+    }
+
+    function showNotif(text) {
+      const notif = document.getElementById('notif');
+      notif.textContent = text;
+      notif.classList.add('show');
+      setTimeout(() => notif.classList.remove('show'), 3000);
+    }
+
+    document.getElementById('reset-cart').onclick = function () {
+      cart = {};
+      total = 0;
+      updateCart();
+      showNotif('Order receipt reset.');
+    };
+
+    document.getElementById('pay-now').onclick = function () {
+      if (total === 0) {
+        showNotif('Your cart is empty.');
+        return;
+      }
+
+      const modal = document.getElementById('payment-modal');
+      const loading = modal.querySelector('.loading');
+      const img = modal.querySelector('.payment-img');
+      const number = modal.querySelector('.payment-number');
+      const doneBtn = modal.querySelector('#done-btn');
+      const successMsg = modal.querySelector('#payment-success');
+
+      modal.style.display = 'flex';
+      loading.style.display = 'block';
+      img.style.display = 'none';
+      number.style.display = 'none';
+      doneBtn.style.display = 'none';
+      successMsg.style.display = 'none';
+
+      setTimeout(() => {
+        loading.style.display = 'none';
+        img.style.display = 'block';
+        number.style.display = 'block';
+        doneBtn.style.display = 'inline-block';
+      }, 1500);
+
+      doneBtn.onclick = function () {
+        img.style.display = 'none';
+        number.style.display = 'none';
+        doneBtn.style.display = 'none';
+        successMsg.style.display = 'block';
+
+        setTimeout(() => {
+          modal.style.display = 'none';
+          cart = {};
+          total = 0;
+          updateCart();
+          showNotif('Payment successful!');
+        }, 2000);
+      };
+    };
+
+    renderItems();
+
+    document.querySelectorAll('.game-list li').forEach(li => {
+      if (li.textContent.trim() === 'PUBG') {
+        li.style.cursor = 'pointer';
+        li.addEventListener('click', () => window.location.href = 'pubg.html');
+      }
+      if (li.textContent.trim() === 'MLBB Diamond') {
+        li.style.cursor = 'pointer';
+        li.addEventListener('click', () => window.location.href = 'mlbb.html');
+      }
+    });
+  </script>
+</body>
+</html>
+    
+      
